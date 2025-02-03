@@ -172,8 +172,21 @@ def optimize(job, save_fn, model):
 
         k1 = cfg.arch.lm_prefix + "model.layers." + str(layer_) + ".self_attn"
         k2 = cfg.arch.lm_prefix + "model.layers." + str(layer_) + "." + mlp_mode
-        p1 = params[layer_ * 2][solution_idx[layer_ * 2]]
-        p2 = params[layer_ * 2 + 1][solution_idx[layer_ * 2 + 1]]
+
+        # This if is added by me, "first_last_q8" is name of the new option from first step
+        if job["first_last_q8"]:
+            last_layer_idx = num_layers - 1
+            if layer_ == 0 or layer_ == last_layer_idx:
+                # 1st or last layer - get method with best accuracy, should be Q8 usually
+                p1 = max(params[layer_ * 2], key=lambda element: element["accuracy"])
+                p2 = max(params[layer_ * 2 + 1], key=lambda element: element["accuracy"])
+            else:
+                # Do normal stuff
+                p1 = params[layer_ * 2][solution_idx[layer_ * 2]]
+                p2 = params[layer_ * 2 + 1][solution_idx[layer_ * 2 + 1]]
+        else:
+            p1 = params[layer_ * 2][solution_idx[layer_ * 2]]
+            p2 = params[layer_ * 2 + 1][solution_idx[layer_ * 2 + 1]]
 
         for (k, p, n) in zip((k1, k2), (p1, p2), (numel_attn, numel_mlp)):
             job["strategy"][k] = p

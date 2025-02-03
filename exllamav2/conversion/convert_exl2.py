@@ -32,6 +32,7 @@ parser.add_argument("-ml", "--measurement_length", type = int, default = 2048, h
 parser.add_argument("-so", "--status_output", action = "store_true", help = "Include machine-parseable status updates in console output")
 parser.add_argument("-hsol", "--hidden_state_offload_layers", type = int, default = 0, help = "Number of hidden/target states to keep in VRAM. Speed-up but increases VRAM usage")
 parser.add_argument("-fst", "--fast_safetensors", action = "store_true", help = "Deprecated (does nothing)")
+parser.add_argument("-fl8", "--first_last_q8", action = "store_true", help = "Use Q8 at 1st and last layer")
 
 args = parser.parse_args()
 
@@ -118,7 +119,8 @@ job = {"in_dir": args.in_dir,
        "rope_scale": args.rope_scale,
        "rope_alpha": args.rope_alpha,
        "output_measurement": output_measurement,
-       "progress": "begin"}
+       "progress": "begin",
+       "first_last_q8": args.first_last_q8}
 
 if args.measurement is not None:
     with open(args.measurement, "r", encoding = "utf8") as f:
