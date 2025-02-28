@@ -164,6 +164,7 @@ class ExLlamaV2Attention(ExLlamaV2Module):
             self.num_key_value_heads = cfg.num_key_value_heads
             self.num_key_value_groups = cfg.num_key_value_groups
             self.head_dim = cfg.head_dim
+            self.rope_head_dim = int(cfg.head_dim * cfg.partial_rotary_factor)
             self.hidden_size = cfg.hidden_size
 
         hidden_size = self.hidden_size
@@ -563,7 +564,7 @@ class ExLlamaV2Attention(ExLlamaV2Module):
                         cos,
                         0,
                         heads,
-                        self.head_dim,
+                        self.rope_head_dim,
                         cache_seqlens_rope,
                         self.archparams.rope_style == RopeStyle.NEOX
                     )
@@ -772,7 +773,7 @@ class ExLlamaV2Attention(ExLlamaV2Module):
                         context.cos,
                         0,
                         (b - a) * heads,
-                        self.head_dim,
+                        self.rope_head_dim,
                         attn_params.cache_seqlens_tp[idx],
                         self.archparams.rope_style == RopeStyle.NEOX
                     )
@@ -1297,7 +1298,7 @@ class ExLlamaV2Attention(ExLlamaV2Module):
                         context.cos,
                         past_len,
                         (b - a) * heads,
-                        self.head_dim,
+                        self.rope_head_dim,
                         attn_params.position_offsets_tp[idx] if attn_params.position_offsets is not None else none_tensor,
                         self.archparams.rope_style == RopeStyle.NEOX
                     )
@@ -1448,8 +1449,8 @@ class ExLlamaV2Attention(ExLlamaV2Module):
                 if offsets is not None:
                     position_offsets = position_offsets + offsets
 
-            ext_c.rope_(query_states, sin, cos, past_len_rope, num_attention_heads, head_dim, position_offsets, self.archparams.rope_style == RopeStyle.NEOX)
-            ext_c.rope_(key_states, sin, cos, past_len_rope, num_key_value_heads, head_dim, position_offsets, self.archparams.rope_style == RopeStyle.NEOX)
+            ext_c.rope_(query_states, sin, cos, past_len_rope, num_attention_heads, self.rope_head_dim, position_offsets, self.archparams.rope_style == RopeStyle.NEOX)
+            ext_c.rope_(key_states, sin, cos, past_len_rope, num_key_value_heads, self.rope_head_dim, position_offsets, self.archparams.rope_style == RopeStyle.NEOX)
 
         # Add keys and values to cache
 

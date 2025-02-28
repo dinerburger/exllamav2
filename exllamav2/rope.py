@@ -13,7 +13,8 @@ def get_rope_params_su(
     device: torch.Device,
     cfg: ExLlamaV2Config,
 ):
-    head_dim = cfg.head_dim
+    head_dim = cfg.head_dim 
+    dim = int(head_dim * cfg.partial_rotary_factor)
     base = cfg.rotary_embedding_base
     if cfg.scale_alpha_value and cfg.scale_alpha_value != 1.0:
         base *= cfg.scale_alpha_value ** (cfg.head_dim / (cfg.head_dim - 2))
@@ -27,7 +28,7 @@ def get_rope_params_su(
         ext_factors = torch.tensor(cfg.scale_short_factor, dtype = torch.float32, device = device)
         scaling_factor = 1.0
 
-    inv_freq = 1.0 / (ext_factors * base ** (torch.arange(0, head_dim, 2, device = device).float() / head_dim))
+    inv_freq = 1.0 / (ext_factors * base ** (torch.arange(0, dim, 2, device = device).float() / dim))
     return inv_freq, scaling_factor
 
 # Llama 3.1
@@ -91,7 +92,8 @@ def get_rope_params_yarn(
     # Only activate if longer than original ctx
     if cfg.max_seq_len > cfg.yarn_rope_original_max_position_embeddings:
 
-        partial_rotary_factor = 1.0  # Placeholder, assume no partial_rotary_factor in config.
+        partial_rotary_factor = cfg.partial_rotary_factor
+
         dim = int(head_dim * partial_rotary_factor)
 
         factor = cfg.yarn_rope_factor
